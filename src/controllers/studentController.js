@@ -1,9 +1,70 @@
 import studentRepository from "../repositories/studentRepository.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 class StudentController {
+	async login(req, res) {
+		try {
+			const { email, password } = req.body;
+
+			const student = await studentRepository.getOne({
+				where: { email: email },
+			});
+
+			if (student && (await bcrypt.compare(password, student.password))) {
+				const token = jwt.sign(
+					{ student_id: student.id, email },
+					process.env.TOKEN_KEY,
+					{
+						expiresIn: "5h",
+					}
+				);
+
+				// res.cookie("jwt", token);
+
+				return res.status(200).json({ token: token });
+			}
+
+			res.status(400).json({ error: "Credenciais inválidas." });
+		} catch (error) {
+			res.status(500).json({ error: error.message });
+		}
+	}
+
 	async create(req, res) {
 		try {
-			const student = await studentRepository.create(req.body);
+			const { name, age, course, department, email, password } = req.body;
+
+			const oldStudent = await studentRepository.getOne({
+				where: { email: email },
+			});
+
+			if (oldStudent) {
+				return res
+					.status(409)
+					.json({ error: "Estudante já cadastrado. Faça o login." });
+			}
+
+			const salt = 10;
+			const encryptedStudentPassword = await bcrypt.hash(password, salt);
+
+			const student = await studentRepository.create({
+				name: name,
+				age: age,
+				course: course,
+				department: department,
+				email: email.toLowerCase(),
+				password: encryptedStudentPassword,
+			});
+
+			const token = jwt.sign(
+				{ student_id: student.id, email },
+				process.env.TOKEN_KEY,
+				{ expiresIn: "5h" }
+			);
+
+			res.cookie("jwt", token);
+
 			res.status(201).json(student);
 		} catch (error) {
 			res.status(500).json({ error: error.message });

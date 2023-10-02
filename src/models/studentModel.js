@@ -23,6 +23,14 @@ const Student = db.define("Student", {
 		type: Sequelize.STRING(160),
 		allowNull: false,
 	},
+	email: {
+		type: Sequelize.STRING(160),
+		allowNull: false,
+	},
+	password: {
+		type: Sequelize.STRING(160),
+		allowNull: false,
+	},
 });
 
 export default Student;

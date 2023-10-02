@@ -15,6 +15,10 @@ class StudentRepository {
 		return await Student.findByPk(id);
 	}
 
+	async getOne(options) {
+		return await Student.findOne(options);
+	}
+
 	async update(id, studentData) {
 		return await Student.update(studentData, {
 			returning: true,
